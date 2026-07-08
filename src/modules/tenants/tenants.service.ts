@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { randomBytes } from 'crypto';
 import { Model } from 'mongoose';
@@ -20,6 +21,7 @@ export class TenantsService {
     @InjectModel(Tenant.name) private readonly tenantModel: Model<Tenant>,
     private readonly users: UsersService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService,
   ) {}
 
   /** Onboarding completo: tenant + subdominio + admin inicial (ver docs/auth-multitenancy.md) */
@@ -55,10 +57,22 @@ export class TenantsService {
       after: { name: dto.name, subdomain, adminEmail: dto.adminEmail },
     });
 
+    // Sin BASE_DOMAIN configurado (aún no se compró el dominio propio) no hay
+    // URL de subdominio real todavía — el login sigue funcionando escribiendo
+    // la clínica a mano (ver docs/auth-multitenancy.md y manual-operacion.md).
+    const baseDomain = this.config.get<string>('BASE_DOMAIN');
+    const loginUrl = baseDomain
+      ? `https://${subdomain}.${baseDomain}`
+      : null;
+
     return {
       tenant,
       admin: { id: admin.id as string, email: admin.email },
-      loginUrl: `https://${subdomain}.tuapp.com`, // TODO: dominio real al deployar
+      loginUrl,
+      loginInstructions: baseDomain
+        ? undefined
+        : `Aún no hay dominio propio configurado. El cliente entra en la URL del ` +
+          `frontend y escribe "${subdomain}" en el campo Clínica, junto a su email y contraseña.`,
       temporaryPassword: dto.adminPassword ? undefined : tempPassword,
     };
   }

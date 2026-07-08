@@ -13,7 +13,9 @@ export class Tenant {
   // el plugin le añade el path pero las queries usan skipTenantGuard vía service.
   @Prop({ required: true }) name: string;
 
-  /** Slug único de acceso: <subdomain>.tuapp.com — lo asigna el super_admin */
+  /** Slug único de acceso: <subdomain>.BASE_DOMAIN (si hay dominio propio
+   *  configurado) — lo asigna el super_admin. Sin BASE_DOMAIN, el cliente
+   *  escribe este subdomain a mano en el campo "Clínica" del login. */
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   subdomain: string;
 

@@ -14,4 +14,8 @@ export const envValidationSchema = Joi.object({
   // Seed del primer super_admin (solo se usa si no existe ninguno)
   SUPER_ADMIN_EMAIL: Joi.string().email({ tlds: { allow: false } }).optional(),
   SUPER_ADMIN_PASSWORD: Joi.string().min(8).optional(),
+  // Dominio propio para armar <subdomain>.BASE_DOMAIN al crear una clínica
+  // (Módulo 7.7 spec). Sin comprar dominio aún: se deja sin definir y el
+  // login funciona igual escribiendo la clínica a mano (ver auth-multitenancy.md).
+  BASE_DOMAIN: Joi.string().optional(),
 });
