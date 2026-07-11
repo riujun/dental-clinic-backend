@@ -11,11 +11,12 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import { Model, QueryFilter } from 'mongoose';
+import { Model, QueryFilter, Types } from 'mongoose';
 import { AuditService } from '../audit/audit.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { MedicalHistoryDto } from './dto/medical-history.dto';
 import { QueryPatientsDto } from './dto/query-patients.dto';
+import { SetToothConditionDto } from './dto/tooth-condition.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { Patient, PatientDocument } from './schemas/patient.schema';
 
@@ -176,6 +177,77 @@ export class PatientsService {
       after: patient.medicalHistory as Record<string, unknown>,
     });
     return this.findOne(tenantId, id);
+  }
+
+  /**
+   * Idea #7: estado inicial del odontograma — reemplaza (upsert) la condición
+   * de un diente puntual. No confundir con procedimientos: esto es el estado
+   * de BASE al ingreso ("ya tenía corona en el 16"), no un tratamiento hecho acá.
+   */
+  async setToothCondition(
+    tenantId: string,
+    id: string,
+    toothFdi: string,
+    dto: SetToothConditionDto,
+    userId?: string,
+  ): Promise<PatientDocument> {
+    const patient = await this.patientModel.findOne({ tenantId, _id: id }).exec();
+    if (!patient) throw new NotFoundException(`Paciente ${id} no encontrado`);
+
+    const before = patient.toothConditions?.find((t) => t.toothFdi === toothFdi);
+    const rest = (patient.toothConditions ?? []).filter((t) => t.toothFdi !== toothFdi);
+    patient.toothConditions = [
+      ...rest,
+      {
+        toothFdi,
+        condition: dto.condition,
+        notes: dto.notes,
+        updatedAt: new Date(),
+        updatedBy: userId ? new Types.ObjectId(userId) : undefined,
+      },
+    ];
+    patient.markModified('toothConditions');
+    await patient.save();
+
+    this.audit.log({
+      tenantId,
+      action: 'patient.tooth_condition_updated',
+      entityType: Patient.name,
+      entityId: id,
+      userId,
+      before: before ? { ...before } : undefined,
+      after: { toothFdi, condition: dto.condition, notes: dto.notes },
+    });
+    return patient;
+  }
+
+  /** Quita el estado inicial de un diente (ej. se cargó por error) */
+  async clearToothCondition(
+    tenantId: string,
+    id: string,
+    toothFdi: string,
+    userId?: string,
+  ): Promise<PatientDocument> {
+    const patient = await this.patientModel.findOne({ tenantId, _id: id }).exec();
+    if (!patient) throw new NotFoundException(`Paciente ${id} no encontrado`);
+
+    const before = patient.toothConditions?.find((t) => t.toothFdi === toothFdi);
+    patient.toothConditions = (patient.toothConditions ?? []).filter((t) => t.toothFdi !== toothFdi);
+    patient.markModified('toothConditions');
+    await patient.save();
+
+    if (before) {
+      this.audit.log({
+        tenantId,
+        action: 'patient.tooth_condition_updated',
+        entityType: Patient.name,
+        entityId: id,
+        userId,
+        before: { ...before },
+        after: undefined,
+      });
+    }
+    return patient;
   }
 
   /** Borrado lógico: los datos de salud no se eliminan físicamente (auditoría) */

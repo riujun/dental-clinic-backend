@@ -10,10 +10,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { CurrentUser } from '../../common/decorators/auth.decorators';
+import type { JwtUser } from '../../common/decorators/auth.decorators';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { MedicalHistoryDto } from './dto/medical-history.dto';
 import { QueryPatientsDto } from './dto/query-patients.dto';
+import { SetToothConditionDto } from './dto/tooth-condition.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { PatientsService } from './patients.service';
 
@@ -54,6 +57,28 @@ export class PatientsController {
     @Body() dto: MedicalHistoryDto,
   ) {
     return this.patients.updateAnamnesis(tenantId, id, dto);
+  }
+
+  /** Idea #7: estado inicial del odontograma — condición de base de un diente */
+  @Patch(':id/tooth-conditions/:toothFdi')
+  setToothCondition(
+    @TenantId() tenantId: string,
+    @Param('id') id: string,
+    @Param('toothFdi') toothFdi: string,
+    @Body() dto: SetToothConditionDto,
+    @CurrentUser() user?: JwtUser,
+  ) {
+    return this.patients.setToothCondition(tenantId, id, toothFdi, dto, user?.sub);
+  }
+
+  @Delete(':id/tooth-conditions/:toothFdi')
+  clearToothCondition(
+    @TenantId() tenantId: string,
+    @Param('id') id: string,
+    @Param('toothFdi') toothFdi: string,
+    @CurrentUser() user?: JwtUser,
+  ) {
+    return this.patients.clearToothCondition(tenantId, id, toothFdi, user?.sub);
   }
 
   /** Borrado lógico (status='archived') — datos de salud nunca se eliminan físicamente */

@@ -11,6 +11,32 @@ export const PATIENT_STATUSES = ['active', 'inactive', 'archived'] as const;
 export const SEX_VALUES = ['M', 'F', 'X', 'ND'] as const;
 export const SMOKER_VALUES = ['no', 'current', 'former'] as const;
 
+/** Idea #7: estado inicial del odontograma — condición de base del diente al
+ *  ingreso del paciente (no confundir con procedimientos/tratamientos, que
+ *  viven en ProcedureInstance). Editable por el doctor en cualquier momento. */
+export const TOOTH_CONDITIONS = [
+  'ausente',
+  'cariado',
+  'obturado',
+  'corona',
+  'implante',
+  'endodoncia',
+  'protesis_fija',
+  'protesis_removible',
+  'fracturado',
+  'extraccion_indicada',
+  'otro',
+] as const;
+export type ToothCondition = (typeof TOOTH_CONDITIONS)[number];
+
+export interface ToothConditionEntry {
+  toothFdi: string;
+  condition: ToothCondition;
+  notes?: string;
+  updatedAt: Date;
+  updatedBy?: Types.ObjectId;
+}
+
 /** Anamnesis médica (estándar ADA / patrón Open Dental) — crítica por interacciones
  *  con anestésicos, antibióticos, bifosfonatos, embarazo, alergias a látex. */
 export interface MedicalHistory {
@@ -48,6 +74,9 @@ export class Patient {
 
   // --- Anamnesis / antecedentes médicos ---
   @Prop({ type: Object }) medicalHistory?: MedicalHistory;
+
+  /** Idea #7: estado inicial del odontograma (uno por diente, se reemplaza al editar) */
+  @Prop({ type: [Object], default: [] }) toothConditions?: ToothConditionEntry[];
 
   // --- Metadatos ---
   @Prop() referralSource?: string;          // marketing/analytics
