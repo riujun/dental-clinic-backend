@@ -33,3 +33,12 @@ export class User {
 
 export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ tenantId: 1, email: 1 }, { unique: true });
+
+// Auditoría de seguridad: passwordHash nunca debe salir en una respuesta HTTP,
+// sin importar qué método lo devuelva (create/update también, no solo findAll).
+UserSchema.set('toJSON', {
+  transform: (_doc, ret) => {
+    delete (ret as { passwordHash?: string }).passwordHash;
+    return ret;
+  },
+});
