@@ -164,7 +164,8 @@ export class AppointmentsService {
     if (dto.status === 'cancelled') {
       appt.cancelledAt = new Date();
       appt.cancelReason = dto.reason;
-      // TODO: pendiente Fase 2 - notificar lista de espera para llenar el hueco
+      // Idea #8: el front consulta GET /waitlist/matches tras cancelar, para
+      // sugerir a quién ofrecerle este horario liberado.
     }
     await appt.save();
 

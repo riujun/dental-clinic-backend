@@ -31,6 +31,7 @@ import { ProceduresModule } from './modules/procedures/procedures.module';
 import { ProfessionalsModule } from './modules/professionals/professionals.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { TreatmentPlansModule } from './modules/treatment-plans/treatment-plans.module';
+import { WaitlistModule } from './modules/waitlist/waitlist.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { TreatmentPlansModule } from './modules/treatment-plans/treatment-plans.
     CashRegisterModule,
     AppointmentsModule,
     TemplatesModule,
+    WaitlistModule,
   ],
   controllers: [AppController],
 })
