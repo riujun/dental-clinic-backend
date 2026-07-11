@@ -15,13 +15,9 @@ export class CashRegisterService {
     private readonly procModel: Model<ProcedureInstance>,
   ) {}
 
-  /** Day Sheet del día indicado (00:00 a 23:59 hora del servidor) */
-  async daily(tenantId: string, date: Date) {
-    const from = new Date(date);
-    from.setHours(0, 0, 0, 0);
-    const to = new Date(date);
-    to.setHours(23, 59, 59, 999);
-
+  /** Day Sheet del rango indicado (from/to ya vienen como instantes UTC
+   *  correctos — calculados por el navegador con la hora local real) */
+  async daily(tenantId: string, from: Date, to: Date) {
     const [byMethod, payments, production] = await Promise.all([
       // Cobros del día agrupados por método
       this.paymentModel.aggregate<{ _id: string; total: number; count: number }>([
