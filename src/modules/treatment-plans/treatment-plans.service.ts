@@ -218,6 +218,7 @@ export class TreatmentPlansService {
         category: item.category,
         performedByProviderId: dto.performedByProviderId,
         completedAt: dto.completedAt,
+        clinicalNote: dto.clinicalNote,
       },
       userId,
     );

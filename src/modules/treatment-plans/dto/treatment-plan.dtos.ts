@@ -76,6 +76,9 @@ export class CompletePlanItemDto {
 
   /** Valor final cobrado; si se omite se usa el subtotal del ítem (snapshot) */
   @IsOptional() @IsNumber() @Min(0) value?: number;
+
+  /** Historial clínico: qué le hizo el doctor al paciente en este ítem */
+  @IsOptional() @IsString() clinicalNote?: string;
 }
 
 export class QueryPlansDto {

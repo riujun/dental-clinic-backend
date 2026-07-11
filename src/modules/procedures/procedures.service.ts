@@ -13,7 +13,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, QueryFilter, Types } from 'mongoose';
 import { AuditService } from '../audit/audit.service';
 import { ProfessionalsService } from '../professionals/professionals.service';
-import { CompleteProcedureDto } from './dto/complete-procedure.dto';
+import {
+  ClinicalNoteDto,
+  CompleteProcedureDto,
+} from './dto/complete-procedure.dto';
 import { CreateProcedureDto } from './dto/create-procedure.dto';
 import { QueryProceduresDto } from './dto/query-procedures.dto';
 import { RefundProcedureDto } from './dto/refund-procedure.dto';
@@ -163,6 +166,7 @@ export class ProceduresService {
       category?: string;
       performedByProviderId: string;
       completedAt?: Date;
+      clinicalNote?: string;
     },
     completedByUserId?: string,
   ): Promise<ProcedureInstanceDocument> {
@@ -180,6 +184,8 @@ export class ProceduresService {
       completedAt: data.completedAt ?? new Date(),
       performedByProviderId: new Types.ObjectId(data.performedByProviderId),
       completedBy: completedByUserId ? new Types.ObjectId(completedByUserId) : undefined,
+      clinicalNoteAt: data.clinicalNote ? new Date() : undefined,
+      clinicalNoteBy: data.clinicalNote && completedByUserId ? new Types.ObjectId(completedByUserId) : undefined,
     });
     this.audit.log({
       tenantId,
@@ -222,6 +228,11 @@ export class ProceduresService {
     doc.performedByProviderId = new Types.ObjectId(dto.performedByProviderId);
     if (dto.value !== undefined) doc.value = dto.value;
     if (completedByUserId) doc.completedBy = new Types.ObjectId(completedByUserId);
+    if (dto.clinicalNote) {
+      doc.clinicalNote = dto.clinicalNote;
+      doc.clinicalNoteAt = new Date();
+      if (completedByUserId) doc.clinicalNoteBy = new Types.ObjectId(completedByUserId);
+    }
 
     // Snapshot de comisión (Módulo 5, paso 3 del endpoint de la spec)
     const commission = await this.commissionSnapshot(
@@ -251,6 +262,35 @@ export class ProceduresService {
       },
     });
 
+    return doc;
+  }
+
+  /**
+   * Historial clínico (pedido de Fabián): el doctor carga/edita QUÉ le hizo al
+   * paciente, en el momento de completar o después — sin reabrir el procedimiento.
+   */
+  async setClinicalNote(
+    tenantId: string,
+    id: string,
+    dto: ClinicalNoteDto,
+    userId?: string,
+  ): Promise<ProcedureInstanceDocument> {
+    const doc = await this.findOne(tenantId, id);
+    const before = doc.clinicalNote;
+    doc.clinicalNote = dto.clinicalNote;
+    doc.clinicalNoteAt = new Date();
+    if (userId) doc.clinicalNoteBy = new Types.ObjectId(userId);
+    await doc.save();
+
+    this.audit.log({
+      tenantId,
+      action: 'procedure.clinical_note_updated',
+      entityType: ProcedureInstance.name,
+      entityId: id,
+      userId,
+      before: { clinicalNote: before },
+      after: { clinicalNote: dto.clinicalNote },
+    });
     return doc;
   }
 }

@@ -1,6 +1,13 @@
 // DONE: Paso 3 - DTO del endpoint PATCH /procedures/:id/complete (spec Módulo 5)
 import { Type } from 'class-transformer';
-import { IsDate, IsMongoId, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsDate,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CompleteProcedureDto {
   @IsMongoId()
@@ -17,4 +24,15 @@ export class CompleteProcedureDto {
   @IsNumber()
   @Min(0)
   value?: number;
+
+  /** Historial clínico: qué se hizo — el doctor puede cargarlo aquí mismo o
+   *  después con PATCH /procedures/:id/clinical-note */
+  @IsOptional()
+  @IsString()
+  clinicalNote?: string;
+}
+
+export class ClinicalNoteDto {
+  @IsString()
+  clinicalNote: string;
 }

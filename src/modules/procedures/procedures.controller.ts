@@ -9,8 +9,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { CurrentUser } from '../../common/decorators/auth.decorators';
+import type { JwtUser } from '../../common/decorators/auth.decorators';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
-import { CompleteProcedureDto } from './dto/complete-procedure.dto';
+import {
+  ClinicalNoteDto,
+  CompleteProcedureDto,
+} from './dto/complete-procedure.dto';
 import { CreateProcedureDto } from './dto/create-procedure.dto';
 import { QueryProceduresDto } from './dto/query-procedures.dto';
 import { RefundProcedureDto } from './dto/refund-procedure.dto';
@@ -40,9 +45,20 @@ export class ProceduresController {
     @TenantId() tenantId: string,
     @Param('id') id: string,
     @Body() dto: CompleteProcedureDto,
+    @CurrentUser() user?: JwtUser,
   ) {
-    // TODO: pendiente módulo Auth - pasar req.user.id como completedByUserId
-    return this.procedures.complete(tenantId, id, dto);
+    return this.procedures.complete(tenantId, id, dto, user?.sub);
+  }
+
+  /** Historial clínico: qué le hizo el doctor al paciente — al completar o después */
+  @Patch(':id/clinical-note')
+  setClinicalNote(
+    @TenantId() tenantId: string,
+    @Param('id') id: string,
+    @Body() dto: ClinicalNoteDto,
+    @CurrentUser() user?: JwtUser,
+  ) {
+    return this.procedures.setClinicalNote(tenantId, id, dto, user?.sub);
   }
 
   /** HU-C3: reembolso (total o parcial) — ajuste negativo de producción y comisión */

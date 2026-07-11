@@ -52,6 +52,14 @@ export class ProcedureInstance {
    *  original — descuentan producción y comisión del periodo en que se emiten */
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'ProcedureInstance' })
   refundOf?: Types.ObjectId;
+
+  /** Historial clínico (pedido de Fabián): qué le hizo el doctor al paciente.
+   *  Se puede cargar al completar o editar después — libre, versión simple
+   *  del "evoluciones SOAP" de la spec base (sin campos S/O/A/P separados). */
+  @Prop() clinicalNote?: string;
+  @Prop() clinicalNoteAt?: Date;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
+  clinicalNoteBy?: Types.ObjectId;
 }
 
 export const ProcedureInstanceSchema = SchemaFactory.createForClass(ProcedureInstance);
